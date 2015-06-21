@@ -1,7 +1,16 @@
 var Hapi = require('hapi');
 var server = new Hapi.Server();
+var Handlebars = require('handlebars');
 
 server.connection({port : 8000});
+
+server.views({
+    engines: {
+        html: Handlebars
+    },
+    relativeTo: __dirname,
+    path: "templates",
+});
 
 server.register(require('hapi-auth-cookie'), function (err) {
 
@@ -35,7 +44,11 @@ server.register(require('bell'), function(err){
                 strategy: 'session'
             },
             handler: function(request, reply){
-                return reply.file('index.html');
+                if (request.auth.isAuthenticated){
+                    return reply.view('index.html', {name: request.auth.credentials.profile.name.first, link: new Handlebars.SafeString('<a href="/profile">Profile</a>')});
+                } else {
+                    return reply.view('index.html', {link: new Handlebars.SafeString('<a href="/login">Login</a>')});
+                }
             }
         }
     });
